@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Manipulador Espacial 3R - Responsivo Mobile</title>
+  <style>
+    :root {
+      --bg-dark: #121214;
+      --card-bg: #202024;
+      --canvas-bg: #19191b;
+      --border-color: #323238;
+      --accent-purple: #8257e5;
+      --accent-green: #04d361;
+      --accent-red: #f75a68;
+      --text-main: #e1e1e6;
+      --text-muted: #a8a8b3;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      padding: 12px;
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .header-title {
+      text-align: center;
+      margin-bottom: 12px;
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    h1 {
+      margin: 0 0 6px 0;
+      color: var(--accent-green);
+      font-size: clamp(1.2rem, 4vw, 1.6rem);
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: clamp(0.78rem, 2.5vw, 0.9rem);
+      line-height: 1.4;
+      margin: 0 auto;
+      max-width: 650px;
+    }
+
+    /* Layout principal adaptável (Desktop: Lado a lado / Mobile: Empilhado) */
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    @media (min-width: 850px) {
+      .container {
+        flex-direction: row;
+        padding: 24px;
+        align-items: flex-start;
+      }
+      .canvas-container {
+        flex: 1.2;
+        position: sticky;
+        top: 20px;
+      }
+      .panel {
+        flex: 1;
+        max-width: 380px;
+      }
+    }
+
+    /* Container do Canvas com proporção fluida */
+    .canvas-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .canvas-wrapper {
+      width: 100%;
+      position: relative;
+      background: var(--canvas-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      touch-action: none; /* Desabilita gestos padrão da página sobre o canvas */
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Botões de presets de câmera para facilidade mobile */
+    .preset-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      justify-content: center;
+    }
+
+    .btn-preset {
+      background: #19191b;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex: 1;
+      max-width: 110px;
+      text-align: center;
+    }
+
+    .btn-preset:active, .btn-preset:hover {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+      background: #202024;
+    }
+
+    .tip {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    /* Painel de Controles */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 4px;
+      margin-top: 4px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    input[type=number] {
+      width: 68px;
+      height: 34px; /* Aumentado para facilitador touch */
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-size: 0.9rem;
+      font-family: monospace;
+      font-weight: bold;
+      text-align: right;
+      outline: none;
+    }
+
+    input[type=number]:focus {
+      border-color: var(--accent-green);
+    }
+
+    .unit {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-family: monospace;
+      min-width: 18px;
+    }
+
+    /* Customização Touch-friendly dos Range Sliders */
+    input[type=range] {
+      width: 100%;
+      height: 28px; /* Maior área de toque */
+      accent-color: var(--accent-green);
+      cursor: pointer;
+      background: transparent;
+    }
+
+    /* Caixa de Informações Cinemáticas */
+    .info-box {
+      background: var(--bg-dark);
+      padding: 12px 14px;
+      border-radius: 8px;
+      border-left: 4px solid var(--accent-green);
+      font-family: monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      margin-top: 6px;
+    }
+
+    .info-box strong {
+      color: #fff;
+    }
+
+    .math-formula {
+      margin-top: 6px;
+      color: #888;
+      font-size: 0.72rem;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-title">
+    <h1>Braço Articulado 3D (Manipulador 3R)</h1>
+    <div class="subtitle">
+      J₁ gira em Z (eixo vertical). J₂ e J₃ giram em eixos horizontais.<br>
+      <strong>Arraste com o dedo/mouse na tela 3D para rotacionar a visão.</strong>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="canvas-container">
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="canvas"></canvas>
+      </div>
+      <div class="preset-buttons">
+        <button class="btn-preset" id="btnIso">Perspectiva</button>
+        <button class="btn-preset" id="btnTop">Visão Topo</button>
+        <button class="btn-preset" id="btnFront">Visão Frente</button>
+      </div>
+      <div class="tip">Toque/Clique e arraste para orbitar a câmera 3D</div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Comprimento dos Elos</div>
+
+      <!-- Elo a1 -->
+      <div class="control-row">
+        <div class="header-row">
+          <label for="num_a1" style="color: var(--accent-purple);">a₁ (Coluna vertical):</label>
+          <div class="input-wrapper">
+            <input id="num_a1" type="number" min="20" max="150" value="80">
+            <span class="unit">px</span>
+          </div>
+        </div>
+        <input id="slider_a1" type="range" min="20" max="150" value="80">
+      </div>
+
+      <!-- Elo a2 -->
+      <div class="control-row">
+        <div class="header-row">
+          <label for="num_a2" style="color: var(--accent-green);">a₂ (Braço):</label>
+          <div class="input-wrapper">
+            <input id="num_a2" type="number" min="30" max="200" value="130">
+            <span class="unit">px</span>
+          </div>
+        </div>
+        <input id="slider_a2" type="range" min="30" max="200" value="130">
+      </div>
+
+      <!-- Elo a3 -->
+      <div class="control-row">
+        <div class="header-row">
+          <label for="num_a3" style="color: var(--accent-red);">a₃ (Antebraço/Garra):</label>
+          <div class="input-wrapper">
+            <input id="num_a3" type="number" min="20" max="150" value="90">
+            <span class="unit">px</span>
+          </div>
+        </div>
+        <input id="slider_a3" type="range" min="20" max="150" value="90">
+      </div>
+
+      <div class="section-title">Juntas (Rotações)</div>
+
+      <!-- Theta 1 -->
+      <div class="control-row">
+        <div class="header-row">
+          <label for="num_t1" style="color: var(--accent-purple);">θ₁ (Base - Eixo Z):</label>
+          <div class="input-wrapper">
+            <input id="num_t1" type="number" min="-180" max="180" value="35">
+            <span class="unit">°</span>
+          </div>
+        </div>
+        <input id="slider_t1" type="range" min="-180" max="180" value="35">
+      </div>
+
+      <!-- Theta 2 -->
+      <div class="control-row">
+        <div class="header-row">
+          <label for="num_t2" style="color: var(--accent-green);">θ₂ (Ombro - Horizontal):</label>
+          <div class="input-wrapper">
+            <input id="num_t2" type="number" min="-90" max="180" value="55">
+            <span class="unit">°</span>
+          </div>
+        </div>
+        <input id="slider_t2" type="range" min="-90" max="180" value="55">
+      </div>
+
+      <!-- Theta 3 -->
+      <div class="control-row">
+        <div class="header-row">
+          <label for="num_t3" style="color: var(--accent-red);">θ₃ (Cotovelo - Horizontal):</label>
+          <div class="input-wrapper">
+            <input id="num_t3" type="number" min="-180" max="180" value="-40">
+            <span class="unit">°</span>
+          </div>
+        </div>
+        <input id="slider_t3" type="range" min="-180" max="180" value="-40">
+      </div>
+
+      <div class="info-box">
+        <div><strong>Inclinação Vertical (Pitch):</strong></div>
+        <div>φ = θ₂ + θ₃</div>
+        <div id="phi_calc" style="color: #ffd700; font-weight: bold; margin-top: 2px;"></div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
+        <div><strong>Posição Espacial (TCP):</strong></div>
+        <div id="pos_3d" style="margin-top: 2px;"></div>
+        <div class="math-formula">
+          r = a₂·cos(θ₂) + a₃·cos(φ)<br>
+          X = r · cos(θ₁)<br>
+          Y = r · sen(θ₁)<br>
+          Z = a₁ + a₂·sen(θ₂) + a₃·sen(φ)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+    const ctx = canvas.getContext('2d');
+
+    const controls = [
+      { slider: document.getElementById('slider_a1'), num: document.getElementById('num_a1') },
+      { slider: document.getElementById('slider_a2'), num: document.getElementById('num_a2') },
+      { slider: document.getElementById('slider_a3'), num: document.getElementById('num_a3') },
+      { slider: document.getElementById('slider_t1'), num: document.getElementById('num_t1') },
+      { slider: document.getElementById('slider_t2'), num: document.getElementById('num_t2') },
+      { slider: document.getElementById('slider_t3'), num: document.getElementById('num_t3') }
+    ];
+
+    // Ângulos da câmera 3D orbital
+    let camYaw = -0.65;
+    let camPitch = 0.42;
+    let isDragging = false;
+    let lastX = 0, lastY = 0;
+    let scaleFactor = 1.0;
+
+    function resizeCanvas() {
+      const rect = canvasWrapper.getBoundingClientRect();
+      const width = rect.width;
+      // Proporção adaptativa (ex: 4:3 em telas maiores, ligeiramente mais alto em telas muito pequenas)
+      const height = Math.max(280, Math.min(width * 0.75, window.innerHeight * 0.5));
+
+      // Ajuste para telas de alta densidade (Retina/Mobile)
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      
+      // Escala de renderização do canvas
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+
+      // Fator de escala adaptativo baseado no tamanho atual da tela
+      scaleFactor = (Math.min(width, height) / 450) * dpr;
+
+      draw();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function getEventPos(e) {
+      if (e.touches && e.touches.length > 0) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }
+      return { x: e.clientX, y: e.clientY };
+    }
+
+    function handleStart(e) {
+      isDragging = true;
+      const pos = getEventPos(e);
+      lastX = pos.x;
+      lastY = pos.y;
+    }
+
+    function handleMove(e) {
+      if (!isDragging) return;
+      if (e.touches) e.preventDefault(); // Evita rolar a página no toque
+      
+      const pos = getEventPos(e);
+      const dx = pos.x - lastX;
+      const dy = pos.y - lastY;
+
+      camYaw += dx * 0.008;
+      camPitch = Math.max(0.05, Math.min(Math.PI / 2 - 0.05, camPitch + dy * 0.008));
+
+      lastX = pos.x;
+      lastY = pos.y;
+      draw();
+    }
+
+    function handleEnd() {
+      isDragging = false;
+    }
+
+    // Suporte a Mouse
+    canvas.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+
+    // Suporte a Touch (Celular/Tablet)
+    canvas.addEventListener('touchstart', handleStart, { passive: false });
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleEnd);
+
+    // Presets de Câmera
+    document.getElementById('btnIso').addEventListener('click', () => { camYaw = -0.65; camPitch = 0.42; draw(); });
+    document.getElementById('btnTop').addEventListener('click', () => { camYaw = 0; camPitch = 1.52; draw(); });
+    document.getElementById('btnFront').addEventListener('click', () => { camYaw = 0; camPitch = 0.08; draw(); });
+
+    function toRad(deg) { return deg * Math.PI / 180; }
+
+    function syncAndDraw(src, tgt) {
+      tgt.value = src.value;
+      draw();
+    }
+
+    controls.forEach(({ slider, num }) => {
+      slider.addEventListener('input', () => syncAndDraw(slider, num));
+      num.addEventListener('input', () => {
+        let val = parseFloat(num.value);
+        if (!isNaN(val)) {
+          slider.value = val;
+          draw();
+        }
+      });
+    });
+
+    function project(x, y, z) {
+      // Centro dinâmico da tela
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2 + (50 * scaleFactor);
+
+      // Rotação em torno do eixo Z (Yaw)
+      const cosY = Math.cos(camYaw);
+      const sinY = Math.sin(camYaw);
+      const x1 = x * cosY - y * sinY;
+      const y1 = x * sinY + y * cosY;
+
+      // Rotação em torno do eixo X (Pitch da câmera)
+      const cosP = Math.cos(camPitch);
+      const sinP = Math.sin(camPitch);
+      const y2 = y1 * cosP - z * sinP;
+      const z2 = y1 * sinP + z * cosP;
+
+      return {
+        px: cx + (x1 * scaleFactor),
+        py: cy - (z2 * scaleFactor),
+        depth: y2
+      };
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const a1 = parseFloat(controls[0].num.value) || 0;
+      const a2 = parseFloat(controls[1].num.value) || 0;
+      const a3 = parseFloat(controls[2].num.value) || 0;
+
+      const deg1 = parseFloat(controls[3].num.value) || 0;
+      const deg2 = parseFloat(controls[4].num.value) || 0;
+      const deg3 = parseFloat(controls[5].num.value) || 0;
+
+      const t1 = toRad(deg1);
+      const t2 = toRad(deg2);
+      const t3 = toRad(deg3);
+
+      const phi = t2 + t3;
+      const degPhi = deg2 + deg3;
+
+      // Cinemática Direta 3D
+      const p0 = { x: 0, y: 0, z: 0 };
+      const p1 = { x: 0, y: 0, z: a1 };
+
+      const r2 = a2 * Math.cos(t2);
+      const z2 = a1 + a2 * Math.sin(t2);
+      const p2 = {
+        x: r2 * Math.cos(t1),
+        y: r2 * Math.sin(t1),
+        z: z2
+      };
+
+      const r3 = r2 + a3 * Math.cos(phi);
+      const z3 = z2 + a3 * Math.sin(phi);
+      const p3 = {
+        x: r3 * Math.cos(t1),
+        y: r3 * Math.sin(t1),
+        z: z3
+      };
+
+      // Atualiza textos explicativos
+      document.getElementById('phi_calc').innerText = `φ = ${deg2}° + (${deg3}°) = ${degPhi}°`;
+      document.getElementById('pos_3d').innerHTML = `
+        X: <strong>${p3.x.toFixed(1)}</strong> px | 
+        Y: <strong>${p3.y.toFixed(1)}</strong> px | 
+        Z: <strong>${p3.z.toFixed(1)}</strong> px
+      `;
+
+      // Desenho dos elementos 3D
+      drawGroundGrid();
+      drawCoordinateAxes();
+
+      const proj0 = project(p0.x, p0.y, p0.z);
+      const proj1 = project(p1.x, p1.y, p1.z);
+      const proj2 = project(p2.x, p2.y, p2.z);
+      const proj3 = project(p3.x, p3.y, p3.z);
+
+      drawFloorShadow(p1, p2, p3);
+
+      // Elo 1: Coluna Vertical
+      drawCylinderLink(proj0, proj1, '#8257e5', `a₁=${a1}`);
+      drawBaseTurntable(proj0, t1);
+
+      // Eixo do Ombro (J2)
+      drawHorizontalJointAxis(p1, t1, '#04d361');
+
+      // Elo 2: Braço
+      drawLink3D(proj1, proj2, '#04d361', `a₂=${a2}`);
+
+      // Eixo do Cotovelo (J3)
+      drawHorizontalJointAxis(p2, t1, '#f75a68');
+
+      // Elo 3: Antebraço
+      drawLink3D(proj2, proj3, '#f75a68', `a₃=${a3}`);
+
+      // Garra / TCP
+      drawEndEffector3D(proj3);
+
+      drawPlaneIndicator();
+    }
+
+    function drawGroundGrid() {
+      ctx.save();
+      ctx.strokeStyle = '#232328';
+      ctx.lineWidth = Math.max(1, scaleFactor * 0.8);
+      const size = 180;
+      const step = 30;
+
+      for (let i = -size; i <= size; i += step) {
+        const a = project(i, -size, 0);
+        const b = project(i, size, 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+
+        const c = project(-size, i, 0);
+        const d = project(size, i, 0);
+        ctx.beginPath();
+        ctx.moveTo(c.px, c.py);
+        ctx.lineTo(d.px, d.py);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawCoordinateAxes() {
+      ctx.save();
+      const o = project(0, 0, 0);
+      const x = project(70, 0, 0);
+      const y = project(0, 70, 0);
+      const z = project(0, 0, 70);
+
+      const fontS = Math.max(10, 11 * (scaleFactor / 1.5));
+      ctx.font = `${fontS}px monospace`;
+
+      // Eixo X
+      ctx.strokeStyle = '#e06c75';
+      ctx.lineWidth = 2 * scaleFactor;
+      ctx.beginPath(); ctx.moveTo(o.px, o.py); ctx.lineTo(x.px, x.py); ctx.stroke();
+      ctx.fillStyle = '#e06c75'; ctx.fillText('X', x.px + 4, x.py);
+
+      // Eixo Y
+      ctx.strokeStyle = '#98c379';
+      ctx.beginPath(); ctx.moveTo(o.px, o.py); ctx.lineTo(y.px, y.py); ctx.stroke();
+      ctx.fillStyle = '#98c379'; ctx.fillText('Y', y.px + 4, y.py);
+
+      // Eixo Z
+      ctx.strokeStyle = '#61afef';
+      ctx.beginPath(); ctx.moveTo(o.px, o.py); ctx.lineTo(z.px, z.py); ctx.stroke();
+      ctx.fillStyle = '#61afef'; ctx.fillText('Z', z.px + 4, z.py);
+      ctx.restore();
+    }
+
+    function drawFloorShadow(p1, p2, p3) {
+      ctx.save();
+      const s1 = project(p1.x, p1.y, 0);
+      const s2 = project(p2.x, p2.y, 0);
+      const s3 = project(p3.x, p3.y, 0);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 2 * scaleFactor;
+      ctx.beginPath();
+      ctx.moveTo(s1.px, s1.py);
+      ctx.lineTo(s2.px, s2.py);
+      ctx.lineTo(s3.px, s3.py);
+      ctx.stroke();
+
+      const pr3 = project(p3.x, p3.y, p3.z);
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.25)';
+      ctx.beginPath();
+      ctx.moveTo(pr3.px, pr3.py);
+      ctx.lineTo(s3.px, s3.py);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawCylinderLink(pA, pB, color, label) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 10 * scaleFactor;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(pA.px, pA.py);
+      ctx.lineTo(pB.px, pB.py);
+      ctx.stroke();
+
+      ctx.fillStyle = '#c9d1d9';
+      ctx.font = `${Math.max(10, 11 * scaleFactor)}px monospace`;
+      ctx.fillText(label, (pA.px + pB.px) / 2 + 8, (pA.py + pB.py) / 2);
+      ctx.restore();
+    }
+
+    function drawLink3D(pA, pB, color, label) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 6 * scaleFactor;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(pA.px, pA.py);
+      ctx.lineTo(pB.px, pB.py);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${Math.max(10, 11 * scaleFactor)}px monospace`;
+      ctx.fillText(label, (pA.px + pB.px) / 2 + 6, (pA.py + pB.py) / 2 - 6);
+      ctx.restore();
+    }
+
+    function drawBaseTurntable(pOrigin, angle) {
+      ctx.save();
+      ctx.strokeStyle = '#8257e5';
+      ctx.lineWidth = 2 * scaleFactor;
+      const r = 35;
+      ctx.beginPath();
+      for (let a = 0; a <= Math.PI * 2; a += 0.2) {
+        const pt = project(r * Math.cos(a), r * Math.sin(a), 0);
+        if (a === 0) ctx.moveTo(pt.px, pt.py);
+        else ctx.lineTo(pt.px, pt.py);
+      }
+      ctx.closePath();
+      ctx.stroke();
+
+      const pointer = project(r * Math.cos(angle), r * Math.sin(angle), 0);
+      ctx.strokeStyle = '#04d361';
+      ctx.lineWidth = 2 * scaleFactor;
+      ctx.beginPath();
+      ctx.moveTo(pOrigin.px, pOrigin.py);
+      ctx.lineTo(pointer.px, pointer.py);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawHorizontalJointAxis(point3D, theta1, color) {
+      ctx.save();
+      const axisLen = 25;
+      const pA = project(
+        point3D.x - axisLen * Math.sin(theta1),
+        point3D.y + axisLen * Math.cos(theta1),
+        point3D.z
+      );
+      const pB = project(
+        point3D.x + axisLen * Math.sin(theta1),
+        point3D.y - axisLen * Math.cos(theta1),
+        point3D.z
+      );
+
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3 * scaleFactor;
+      ctx.beginPath();
+      ctx.moveTo(pA.px, pA.py);
+      ctx.lineTo(pB.px, pB.py);
+      ctx.stroke();
+
+      const center = project(point3D.x, point3D.y, point3D.z);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(center.px, center.py, 4 * scaleFactor, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawEndEffector3D(proj3) {
+      ctx.save();
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(proj3.px, proj3.py, 5 * scaleFactor, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.font = `bold ${Math.max(10, 11 * scaleFactor)}px monospace`;
+      ctx.fillText('Garra (TCP)', proj3.px + 8, proj3.py + 4);
+      ctx.restore();
+    }
+
+    function drawPlaneIndicator() {
+      ctx.save();
+      ctx.fillStyle = '#8b949e';
+      const fontSize = Math.max(10, 11 * (scaleFactor / 1.4));
+      ctx.font = `${fontSize}px sans-serif`;
+      ctx.fillText('• Base: Rotação θ₁ (Z)', 12, 20 * scaleFactor);
+      ctx.fillText('• Juntas horizontais: θ₂ e θ₃', 12, 36 * scaleFactor);
+      ctx.restore();
+    }
+
+    // Inicialização da aplicação
+    window.onload = function() {
+      resizeCanvas();
+    };
+  </script>
+</body>
+</html>
